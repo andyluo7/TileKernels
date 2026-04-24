@@ -26,4 +26,8 @@ def get_num_sms() -> int:
 @functools.lru_cache(maxsize=None)
 def get_max_smem_per_sm() -> int:
     prop = torch.cuda.get_device_properties(torch.cuda.current_device())
-    return prop.shared_memory_per_multiprocessor
+    if hasattr(prop, 'shared_memory_per_multiprocessor'):
+        return prop.shared_memory_per_multiprocessor
+    # ROCm: attribute not available, use per-block shared memory as approximation
+    # MI300X (gfx942): 64KB per CU, MI355X (gfx950): 64KB per CU
+    return getattr(prop, 'max_shared_memory_per_block', 65536)
