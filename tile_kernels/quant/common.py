@@ -12,6 +12,10 @@ from tile_kernels.utils import align, ceil_div
 
 def get_best_vectorize_size(dtype: T.dtype) -> int:
     target = determine_target(return_object=True)
+    target_kind = target.kind.name if hasattr(target, 'kind') else str(target)
+    if target_kind == 'hip' or 'gfx' in str(getattr(target, 'attrs', {})):
+        # AMD ROCm: gfx942 (MI300X) and gfx950 (MI355X) support 16-byte vectorized loads
+        return 16 // dtype.bytes
     ver = nvcc.get_target_compute_version(target)  # e.g. "8.6"
     major, _ = nvcc.parse_compute_version(ver)
     return (16 if major < 10 else 32) // dtype.bytes
