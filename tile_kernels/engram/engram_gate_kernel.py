@@ -28,8 +28,9 @@ def get_engram_gate_fwd_kernel(
 ):
     """Forward kernel. When save_for_backward=True, saves dot/gate_score/rstd_x/rstd_k for backward."""
     num_tokens = T.dynamic('num_tokens')
-    threads = 32
-    vec_size = 8
+    from tile_kernels.utils import get_warp_size
+    threads = get_warp_size()  # 32 on NVIDIA, 64 on AMD
+    vec_size = 8 if threads == 32 else 4  # Adjust vec_size to keep reduce_blk similar
 
     # NOTE Performance only tuned for hidden_size in {4096, 7168}
     def _choose_blk_d(hidden_size):
