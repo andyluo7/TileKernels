@@ -3,8 +3,11 @@ from typing import Optional, Union
 
 import torch
 from tilelang import language as T
-from tilelang.contrib import nvcc
 from tilelang.utils.target import determine_target
+try:
+    from tilelang.contrib import nvcc
+except ImportError:
+    nvcc = None  # ROCm-only builds may not have nvcc contrib
 
 from tile_kernels.quant.types import QuantTensor
 from tile_kernels.utils import align, ceil_div

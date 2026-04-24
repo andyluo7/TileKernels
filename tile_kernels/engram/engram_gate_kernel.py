@@ -206,7 +206,8 @@ def get_engram_gate_bwd_kernel(
     """
     assert hc_mult == 4
     num_tokens = T.dynamic('num_tokens')
-    warp_size = 32
+    from tile_kernels.utils import get_warp_size
+    warp_size = get_warp_size()
     warps_per_head = 2
     num_warps = hc_mult * warps_per_head
     threads = warp_size * num_warps

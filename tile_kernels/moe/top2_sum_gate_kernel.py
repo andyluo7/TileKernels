@@ -32,8 +32,9 @@ def get_top2_sum_gate_kernel(
     unmapped_topk_idx_exists: bool, to_physical_map_exists: bool,
 ):  # fmt: off
     # Kernel config
-    warp_size = 32
-    num_threads = 32
+    from tile_kernels.utils import get_warp_size
+    warp_size = get_warp_size()
+    num_threads = warp_size
     assert num_topk <= warp_size, f'num_topk must be less than or equal to {warp_size}'
 
     # Each warp handles one token
