@@ -74,7 +74,7 @@ def get_get_fused_mapping_kernel(
 
             for i in T.serial(lane_idx, num_experts, warp_size):
                 experts_sum_per_warp_shared[warp_idx, i] = 0
-            T.sync_warp()
+            T.sync_threads()  # sync_warp → sync_threads for ROCm compat
 
             for i in T.serial(global_thread_idx, num_expanded_tokens, num_global_threads):
                 pos_to_token[i] = -1
@@ -159,7 +159,7 @@ def get_get_fused_mapping_kernel(
                     pos_to_expert[pos] = expert_idx
                     pos_to_token[pos] = i // num_topk
                     pos_to_token_topk[pos] = i
-                T.sync_warp()
+                T.sync_threads()  # sync_warp → sync_threads for ROCm compat
 
     return get_fused_mapping_kernel
 

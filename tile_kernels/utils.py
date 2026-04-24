@@ -29,3 +29,13 @@ def get_warp_size() -> int:
         return 32  # Default NVIDIA
     except Exception:
         return 32
+
+
+def is_hip_target() -> bool:
+    """Check if the current TileLang target is HIP/ROCm."""
+    try:
+        from tilelang.utils.target import determine_target
+        target = determine_target(return_object=True)
+        return target.kind.name == 'hip'
+    except Exception:
+        return False

@@ -163,7 +163,7 @@ def get_top2_sum_gate_kernel(
                             scores_local[i * num_vectorize + j] = T.exp(scores_local[i * num_vectorize + j] - logit_max_var)
                             logit_sum_var += scores_local[i * num_vectorize + j]
                 warp_reduce_sum(logit_sum_var)
-                T.sync_warp()
+                T.sync_threads()  # sync_warp → sync_threads for ROCm compat
 
             for i in T.unroll(0, T.ceildiv(num_routed_experts, num_vectorize * warp_size)):
                 start_expert_idx = i * num_vectorize * warp_size + lane_idx * num_vectorize
@@ -194,7 +194,7 @@ def get_top2_sum_gate_kernel(
                             idx_local[local_idx] = expert_idx
 
             # Ensure all shared memory stores are completed
-            T.sync_warp()
+            T.sync_threads()  # sync_warp → sync_threads for ROCm compat
 
             if not fix_routing_mask_exists or not fix_routing_mask[global_token_idx]:
                 # Get `num_topk_groups` groups with the largest top2-sum

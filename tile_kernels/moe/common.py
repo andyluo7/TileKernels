@@ -49,4 +49,4 @@ def get_topk_group_idx(
         topk_group_idx_shared[token_idx, count_var] = lane_idx
 
     # Sync warp to ensure all threads have written their topk group indices
-    T.sync_warp()
+    T.sync_threads()  # sync_warp → sync_threads for ROCm compat

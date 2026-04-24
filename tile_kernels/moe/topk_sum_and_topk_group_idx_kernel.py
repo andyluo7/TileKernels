@@ -50,7 +50,7 @@ def get_topk_sum_and_topk_group_idx_kernel(
             lane_idx = thread_idx % 32
 
             T.copy(scores[pid * num_tokens_per_block, 0], scores_shared)
-            T.sync_warp()
+            T.sync_threads()  # sync_warp → sync_threads for ROCm compat
 
             get_topk_group_idx(
                 scores_shared=scores_shared,
