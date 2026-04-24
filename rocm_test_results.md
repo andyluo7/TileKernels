@@ -2,25 +2,46 @@
 
 **TileLang:** v0.1.9+rocm | **Docker:** tilelang_rocm:latest | **Date:** 2026-04-24
 
-## Results
+## Results Summary
 
-| Module | Test File | Passed | Failed | Skipped | Notes |
-|--------|-----------|--------|--------|---------|-------|
-| **transpose** | test_transpose.py | 66 | 46 | 112 | All failures are FP8 E4M3 (NaN output) |
-| **engram** | all | 8 | 30 | 38 | Needs investigation |
-| **moe** | test_topk_gate.py | 20 | 0 | 20 | ✅ All non-skipped pass |
-| **moe** | remaining 10 files | TBD | TBD | TBD | Some hang (JIT timeout) |
-| **quant** | all | TBD | TBD | ~1600+ skip | Most skipped (SM90/SM100) |
-| **mhc** | all | ~40 | ~6 | TBD | Partial results from earlier run |
+| Module | Passed | Failed | Skipped | Total | Time |
+|--------|--------|--------|---------|-------|------|
+| **transpose** | 70 | 42 | 112 | 224 | 34s |
+| **engram** | 18 | 20 | 38 | 76 | 124s |
+| **moe** | 116 | 160 | 257 | 533 | ~6min |
+| **quant** | TBD | TBD | ~1600 | ~1800 | — |
+| **mhc** | ~40 | ~35 | ~10 | ~85 | — |
+| **TOTAL** | **204+** | **222+** | **407+** | **833+** | — |
 
-## Known Issues
+## MoE Detailed
 
-1. **FP8 E4M3 NaN** — All FP8 transpose tests produce NaN. Likely TileLang ROCm FP8 codegen issue.
-2. **SM90/SM100 arch skips** — Many tests skip due to compute capability checks (SM90=Hopper, SM100=Blackwell). Need gfx942/gfx950 equivalents.
-3. **JIT compile timeout** — First compilation of Triton kernels on ROCm takes 30-120s per kernel, causing test timeouts.
+| File | Pass | Fail | Skip |
+|------|------|------|------|
+| aux_fi | 24 | 0 | 24 |
+| group_count | 12 | 0 | 12 |
+| inplace_unique | 24 | 0 | 24 |
+| mask_indices_by_tp | 36 | 0 | 36 |
+| topk_gate | 20 | 0 | 20 |
+| expand_to_fused | 0 | 25 | 24 |
+| get_fused_mapping | 0 | 24 | 24 |
+| normalize_weight | 0 | 12 | 12 |
+| reduce_fused | 0 | 40 | 0 |
+| top2_sum_gate | 0 | 11 | 33 |
+| topk_sum_and_idx | 0 | 48 | 48 |
 
-## Summary (partial)
-- **94+ passed** (66 transpose + 20 moe + 8 engram)
-- **76+ failed** (46 transpose FP8 + 30 engram)
-- **170+ skipped** (112 transpose + 20 moe + 38 engram)
-- MoE, quant, mhc: incomplete due to JIT timeouts
+## Failure Categories
+
+1. **FP8 E4M3 NaN** (42 transpose) — TileLang ROCm FP8 codegen produces NaN
+2. **hipModuleLaunchKernel invalid arg** (~35 mhc) — kernel launch config incompatible with HIP
+3. **Warp-level ops** (~60) — hardcoded warp_size=32, some fixed in our patch
+4. **shared_memory_per_multiprocessor** — fixed in our patch
+5. **nvcc.get_target_compute_version** — fixed in our patch
+
+## Fixes Applied (branch rocm-support)
+
+1. `get_best_vectorize_size()` — HIP target detection
+2. `get_warp_size()` utility — returns 64 for AMD wave64
+3. Warp size in moe/get_fused_mapping, moe/top2_sum_gate, engram/engram_gate
+4. `get_max_smem_per_sm()` — fallback for ROCm
+5. `nvcc` import guard
+6. Engram gate forward threads=64 on AMD
